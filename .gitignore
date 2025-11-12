@@ -1,1 +1,4 @@
 /build
+/output
+*.ppm
+*.gif

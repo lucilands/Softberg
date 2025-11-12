@@ -31,15 +31,16 @@ sb_vec3f parse_obj_vertex(char buf[]) {
 sb_vec3i parse_obj_face(char buf[]) {
   sb_vec3i ret = {0};
 
+  // NOTE: obj stores indices that start at 1, we want them to start at 0 tho
   char *word = strtok(buf, " ");
   word = strtok(NULL, " ");
-  ret.x = atoi(word);
+  ret.x = atoi(word) - 1;
 
   word = strtok(NULL, " ");
-  ret.y = atoi(word);
+  ret.y = atoi(word) - 1;
 
   word = strtok(NULL, " ");
-  ret.z = atoi(word);  
+  ret.z = atoi(word) - 1;  
 
   return ret;
 }
@@ -61,9 +62,15 @@ sb_mesh sb_load_obj(const char * restrict path) {
   if (!vertices) {errno = ENOMEM; return (sb_mesh){0};}
   sb_vec3i *faces = malloc(num_faces * sizeof(sb_vec3i));
   if (!faces) {errno = ENOMEM; return (sb_mesh){0};}
+  sb_color *colors = malloc(num_verts * sizeof(sb_color));
+  if (!colors) {errno = ENOMEM; return (sb_mesh){0};}
 
   sb_uint vert_idx = 0;
   sb_uint face_idx = 0;
+
+  for (sb_uint i = 0; i < num_verts; i++) {
+    colors[i] = (sb_color) {rand() % 255, rand() % 255, rand() % 255};
+  }
 
   sb_uint line = 0;
   fseek(f, 0L, SEEK_SET);
@@ -92,6 +99,7 @@ sb_mesh sb_load_obj(const char * restrict path) {
   return (sb_mesh) {
     vertices,
     faces,
+    colors,
     num_faces,
   };
 }

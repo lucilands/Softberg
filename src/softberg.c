@@ -8,13 +8,14 @@
 #include <errno.h>
 
 
-void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle) {
-  sb_triangle2d projected_triangle = project_triangle(triangle);
+void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform t) {
+  sb_triangle2d projected_triangle = project_triangle(triangle, t);
+  //sb_triangle2d projected_triangle = project_triangle(triangle, 10, 10, t);
   center_triangle(canvas, &projected_triangle);
 
   bounding_box bounding_box = calculate_bb(canvas, projected_triangle);
 
-  sb_color tri_col = {rand() % 255, rand() % 255, rand() % 255};
+  sb_color tri_col = triangle.v1_color;
 
   for (sb_uint x = bounding_box.topleft.x; x < bounding_box.bottomright.x; x++) {
     for (sb_uint y = bounding_box.topleft.y; y < bounding_box.bottomright.y; y++) {
@@ -27,11 +28,11 @@ void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle) {
   }
 }
 
-void sb_render_mesh(sb_canvas *canvas, sb_mesh mesh) {
+void sb_render_mesh(sb_canvas *canvas, sb_mesh mesh, sb_transform t) {
   for (sb_uint i = 0; i < mesh.len; i++) {
     sb_vec3i idx = mesh.indices[i];
-    sb_triangle3d tri = {mesh.vertices[idx.x], mesh.vertices[idx.y], mesh.vertices[idx.z]};
-    sb_render_triangle(canvas, tri);
+    sb_triangle3d tri = {mesh.vertices[idx.x], mesh.vertices[idx.y], mesh.vertices[idx.z], mesh.colors[idx.x], mesh.colors[idx.y], mesh.colors[idx.z]};
+    sb_render_triangle(canvas, tri, t);
   }
 }
 
@@ -41,6 +42,9 @@ sb_canvas *sb_canvas_init(sb_uint width, sb_uint height) {
 
   ret->data = malloc(width * height * sizeof(sb_color));
   if (!ret->data) {errno = ENOMEM; return NULL;}
+
+  ret->depth = malloc(width * height * sizeof(float));
+  if (!ret->depth) {errno = ENOMEM; return NULL;}
 
   ret->width = width;
   ret->height = height;
@@ -53,4 +57,10 @@ sb_canvas *sb_canvas_init(sb_uint width, sb_uint height) {
 void sb_canvas_delete(sb_canvas *canvas) {
   free(canvas->data);
   free(canvas);
+}
+
+void sb_canvas_fill(sb_canvas *canvas, sb_color color) {
+  for (sb_uint i = 0; i < canvas->width * canvas->height; i++) {
+    canvas->data[i] = color;
+  }
 }

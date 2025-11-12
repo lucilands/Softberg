@@ -11,7 +11,11 @@ typedef struct {
   sb_vec2f bottomright;
 } bounding_box;
 
-sb_triangle2d project_triangle(sb_triangle3d triangle);
+typedef struct {
+  sb_vec3f ihat, jhat, khat;
+} basis_vectors;
+
+sb_triangle2d project_triangle(sb_triangle3d triangle, sb_transform t);
 void center_triangle(sb_canvas *canvas, sb_triangle2d *triangle);
 bounding_box calculate_bb(sb_canvas *canvas, sb_triangle2d triangle);
 bool point_in_triangle(sb_vec2f pt, sb_triangle2d tri);

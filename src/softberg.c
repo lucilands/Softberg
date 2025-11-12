@@ -56,6 +56,7 @@ sb_canvas *sb_canvas_init(sb_uint width, sb_uint height) {
 
 void sb_canvas_delete(sb_canvas *canvas) {
   free(canvas->data);
+  free(canvas->depth);
   free(canvas);
 }
 
@@ -63,4 +64,10 @@ void sb_canvas_fill(sb_canvas *canvas, sb_color color) {
   for (sb_uint i = 0; i < canvas->width * canvas->height; i++) {
     canvas->data[i] = color;
   }
+}
+
+void sb_mesh_delete(sb_mesh mesh) {
+  free(mesh.vertices);
+  free(mesh.indices);
+  free(mesh.colors);
 }

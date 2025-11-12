@@ -32,4 +32,6 @@ void sb_canvas_fill(sb_canvas *canvas, sb_color color);
 void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform t);
 void sb_render_mesh(sb_canvas *canvas, sb_mesh mesh, sb_transform t);
 
+void sb_mesh_delete(sb_mesh mesh);
+
 #endif //_SOFTBERG_HEADER

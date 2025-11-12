@@ -1,27 +1,12 @@
 #include <softberg/softberg.h>
 #include <softberg/utils.h>
 
+#include <SDL2/SDL.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
-int mkdir_exist(const char *path) {
-#ifdef _WIN32
-    int result = _mkdir(path);
-#else
-    int result = mkdir(path, 0755);
-#endif
-    if (result == 0) return 0; // created
-#ifdef _WIN32
-    if (errno == EEXIST) return 0;
-#else
-    if (errno == EEXIST) return 0;
-#endif
-    return -1; // error
-}
 
 
 sb_transform transform = {
@@ -30,28 +15,63 @@ sb_transform transform = {
   .scale = {100.0f, 100.0f, 100.0f}
 };
 
+const sb_uint WIDTH = 1080;
+const sb_uint HEIGHT = 720;
 
 int main() {
-  sb_canvas *canvas = sb_canvas_init(1080, 720);
+  SDL_Init(SDL_INIT_VIDEO);
+  SDL_Window* win = SDL_CreateWindow("Softberg Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
+  SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+  SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+
+  sb_canvas *canvas = sb_canvas_init(WIDTH, HEIGHT);
   if (!canvas) {printf("ERROR: Failed to create canvas: %s\n", strerror(errno)); return 1;}
 
-  sb_mesh mesh = sb_load_obj("models/cube.obj");
+  sb_mesh mesh = sb_load_obj("models/cube.obj");  
 
-  mkdir_exist("output");
-  char name[256];
-  for (unsigned int i = 0; i < 63; i++) {
+  int running = 1;
+  SDL_Event e;
+  while (running) {
+    while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) running = 0;
     sb_canvas_fill(canvas, (sb_color) {0, 0, 0});
-
-    snprintf(name, 256, "output/frame_%02i.ppm", i);
-    printf("Rendering frame %02i to %s\n", i, name);
-
     sb_render_mesh(canvas, mesh, transform);
-    sb_write_ppm(canvas, name);
-    transform.rotation.y += 0.1;
-    transform.rotation.x += 0.1;
-  }
-  //sb_render_triangle(canvas, triangle, transform);
 
+    void* pixels;
+    int pitch;
+    SDL_LockTexture(tex, NULL, &pixels, &pitch);
+    uint8_t* dst = pixels;
+
+    for (sb_uint y = 0; y < canvas->height; y++) {
+      uint8_t* row = dst + y * pitch;
+      for (sb_uint x = 0; x < canvas->width; x++) {
+        sb_color c = canvas->data[y * canvas->width + x];
+        // Clamp to 0-255
+        uint8_t r = (c.r > 255 ? 255 : c.r);
+        uint8_t g = (c.g > 255 ? 255 : c.g);
+        uint8_t b = (c.b > 255 ? 255 : c.b);
+
+        // RGBA8888 expects R,G,B,A in this order
+        row[x*4 + 0] = r;
+        row[x*4 + 1] = g;
+        row[x*4 + 2] = b;
+        row[x*4 + 3] = 255; // full alpha
+      }
+    }
+
+    SDL_UnlockTexture(tex);
+
+    transform.rotation.y += 0.025;
+    transform.rotation.x += 0.025;
+
+    SDL_RenderClear(ren);
+    SDL_RenderCopy(ren, tex, NULL, NULL);
+    SDL_RenderPresent(ren);
+  }
+
+  SDL_DestroyTexture(tex);
+  SDL_DestroyRenderer(ren);
+  SDL_DestroyWindow(win);
+  SDL_Quit();
   sb_canvas_delete(canvas);
   return 0;
 }

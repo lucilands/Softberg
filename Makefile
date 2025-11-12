@@ -3,7 +3,7 @@ LIBDIR=build/lib
 BINDIR=build/bin
 
 CFLAGS=-Wall -Wextra -std=c99 -pedantic -Iinclude
-LDFLAGS=-L$(LIBDIR) -lsoftberg
+LDFLAGS=-L$(LIBDIR) -lsoftberg -lm
 
 BUILD_STATIC=Yes
 BUILD_DEMO=Yes
@@ -38,7 +38,7 @@ endif
 $(OBJECTS):$(BUILDDIR)/%.o: src/%.c $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(DEMO): demo/main.c $(BINDIR)
+$(DEMO): demo/main.c $(BINDIR) $(TARGET)
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(LIBDIR) $(BUILDDIR) $(BINDIR):

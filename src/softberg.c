@@ -1,25 +1,56 @@
 #include <softberg/softberg.h>
 #include <softberg/softmath.h>
 
+#include "triangle.h"
+
+#include <time.h>
 #include <stdlib.h>
 #include <errno.h>
 
 
+void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle) {
+  sb_triangle2d projected_triangle = project_triangle(triangle);
+  center_triangle(canvas, &projected_triangle);
 
-sb_canvas_t *sb_canvas_init(sb_uint_t width, sb_uint_t height) {
-  sb_canvas_t *ret = malloc(sizeof(sb_canvas_t));
+  bounding_box bounding_box = calculate_bb(canvas, projected_triangle);
+
+  sb_color tri_col = {rand() % 255, rand() % 255, rand() % 255};
+
+  for (sb_uint x = bounding_box.topleft.x; x < bounding_box.bottomright.x; x++) {
+    for (sb_uint y = bounding_box.topleft.y; y < bounding_box.bottomright.y; y++) {
+      int index = x + canvas->width * y;
+      if (point_in_triangle(sb_vec2(x, y), projected_triangle)) {
+        canvas->data[index] = (sb_color) {255, 255, 255};
+        canvas->data[index] = tri_col;
+      }
+    }
+  }
+}
+
+void sb_render_mesh(sb_canvas *canvas, sb_mesh mesh) {
+  for (sb_uint i = 0; i < mesh.len; i++) {
+    sb_vec3i idx = mesh.indices[i];
+    sb_triangle3d tri = {mesh.vertices[idx.x], mesh.vertices[idx.y], mesh.vertices[idx.z]};
+    sb_render_triangle(canvas, tri);
+  }
+}
+
+sb_canvas *sb_canvas_init(sb_uint width, sb_uint height) {
+  sb_canvas *ret = malloc(sizeof(sb_canvas));
   if (!ret) {errno = ENOMEM; return NULL;}
 
-  ret->data = malloc(width * height * sizeof(sb_color_t));
+  ret->data = malloc(width * height * sizeof(sb_color));
   if (!ret->data) {errno = ENOMEM; return NULL;}
 
   ret->width = width;
   ret->height = height;
 
+  srand(time(NULL));
+
   return ret;
 }
 
-void sb_canvas_delete(sb_canvas_t *canvas) {
+void sb_canvas_delete(sb_canvas *canvas) {
   free(canvas->data);
   free(canvas);
 }

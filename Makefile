@@ -2,7 +2,7 @@ BUILDDIR=build
 LIBDIR=build/lib
 BINDIR=build/bin
 
-CFLAGS=-Wall -Wextra -std=c99 -pedantic -Iinclude -ggdb
+CFLAGS=-Wall -Wextra -std=c99 -pedantic -Iinclude -ggdb -O3
 LDFLAGS=-L$(LIBDIR) -lsoftberg -lm -lSDL2
 
 BUILD_STATIC=Yes

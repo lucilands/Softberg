@@ -97,6 +97,7 @@ int main() {
       if (e.type == SDL_KEYDOWN) {
         if (e.key.keysym.sym == SDLK_d) depth_screen = !depth_screen;
         if (e.key.keysym.sym == SDLK_c) interpolate_colors = !interpolate_colors;
+        if (e.key.keysym.sym == SDLK_s) sb_write_ppm(canvas, "snapshot.ppm");
         if (e.key.keysym.sym == SDLK_q) running = false;
       }
     }

@@ -30,11 +30,14 @@ bool point_in_triangle(sb_vec2f p, sb_triangle2d tri) {
 }
 
 float depth_at_point(sb_vec2f pt, sb_triangle3d tri) {
-  float denom = (tri.v2.y - tri.v3.y)*(tri.v1.x - tri.v3.x) + (tri.v3.x - tri.v2.x)*(tri.v1.y - tri.v3.y);
-  float a = ((tri.v2.y - tri.v3.y)*(pt.x - tri.v3.x) + (tri.v3.x - tri.v2.x)*(pt.y - tri.v3.y)) / denom;
-  float b = ((tri.v3.y - tri.v1.y)*(pt.x - tri.v3.x) + (tri.v1.x - tri.v3.x)*(pt.y - tri.v3.y)) / denom;
-  float c = 1.0f - a - b;
-  return a*tri.v1.z + b*tri.v2.z + c*tri.v3.z;
+    sb_vec3f e0 = { tri.v2.x - tri.v1.x, tri.v2.y - tri.v1.y, tri.v2.z - tri.v1.z };
+    sb_vec3f e1 = { tri.v3.x - tri.v1.x, tri.v3.y - tri.v1.y, tri.v3.z - tri.v1.z };
+    float denom = e0.x*e1.y - e1.x*e0.y;
+    float a = (pt.x*e1.y - e1.x*pt.y)/denom;
+    float b = (e0.x*pt.y - pt.x*e0.y)/denom;
+    float c = 1.0f - a - b;
+
+    return a*tri.v1.z + b*tri.v2.z + c*tri.v3.z;
 }
 
 sb_color interpolate_color(sb_vec2f pt, sb_triangle2d tri) {

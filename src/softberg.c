@@ -10,6 +10,7 @@
 #include <string.h>
 
 
+
 void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform t, bool interpolate_colors) {
   sb_triangle3d projected_triangle = project_triangle(triangle, t);
   sb_triangle2d projected_triangle2d = (sb_triangle2d) {
@@ -27,18 +28,17 @@ void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform 
   bounding_box bounding_box = calculate_bb(canvas, projected_triangle2d);
 
   sb_color pix_col = triangle.v1_color;
-  float depth = 0.0f;
+  float depth = FLT_MIN;
 
   for (sb_uint x = bounding_box.topleft.x; x < bounding_box.bottomright.x; x++) {
     for (sb_uint y = bounding_box.topleft.y; y < bounding_box.bottomright.y; y++) {
       int index = x + canvas->width * y;
-      //depth = depth_at_point(sb_vec2(x, y), projected_triangle);
-      depth = projected_triangle.v1.z;
       if (interpolate_colors) pix_col = interpolate_color(sb_vec2(x, y), projected_triangle2d);
+
       if (point_in_triangle(sb_vec2(x, y), projected_triangle2d)) {
-        canvas->depth[index] = depth;
-        canvas->data[index] = (sb_color) {255, 255, 255};
+        depth = depth_at_point(sb_vec2(x, y), projected_triangle);
         canvas->data[index] = pix_col;
+        if (depth > canvas->depth[index]) canvas->depth[index] = depth;
       }
     }
   }
@@ -77,9 +77,9 @@ void sb_canvas_delete(sb_canvas *canvas) {
 }
 
 void sb_canvas_fill(sb_canvas *canvas, sb_color color) {
-  memset(canvas->depth, 0, (canvas->width * canvas->height) * sizeof(float));
   for (sb_uint i = 0; i < canvas->width * canvas->height; i++) {
     canvas->data[i] = color;
+    canvas->depth[i] = FLT_MIN;
   }
 }
 

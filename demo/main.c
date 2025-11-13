@@ -86,7 +86,7 @@ int main() {
   sb_canvas *canvas = sb_canvas_init(WIDTH, HEIGHT);
   if (!canvas) {printf("ERROR: Failed to create canvas: %s\n", strerror(errno)); return 1;}
 
-  sb_mesh mesh = sb_load_obj("models/cube.obj"); 
+  sb_mesh mesh = sb_load_obj("models/suzanne.obj"); 
 
   int running = 1;
   SDL_Event e;

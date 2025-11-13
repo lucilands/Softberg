@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
   sb_vec2f v1, v2, v3;
-  sb_color v1_color, v2_color, v3_color;
+  sb_color c1, c2, c3;
 } sb_triangle2d;
 
 typedef struct {

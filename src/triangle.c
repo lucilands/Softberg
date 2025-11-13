@@ -26,7 +26,34 @@ bool point_in_triangle(sb_vec2f p, sb_triangle2d tri) {
 	float totalArea = (areaABP + areaBCP + areaCAP);
 	//float invAreaSum = 1 / totalArea;
 
-	return inTri && totalArea > 0;}
+	return inTri && totalArea > 0;
+}
+
+float depth_at_point(sb_vec2f pt, sb_triangle3d tri) {
+  float denom = (tri.v2.y - tri.v3.y)*(tri.v1.x - tri.v3.x) + (tri.v3.x - tri.v2.x)*(tri.v1.y - tri.v3.y);
+  float a = ((tri.v2.y - tri.v3.y)*(pt.x - tri.v3.x) + (tri.v3.x - tri.v2.x)*(pt.y - tri.v3.y)) / denom;
+  float b = ((tri.v3.y - tri.v1.y)*(pt.x - tri.v3.x) + (tri.v1.x - tri.v3.x)*(pt.y - tri.v3.y)) / denom;
+  float c = 1.0f - a - b;
+  return a*tri.v1.z + b*tri.v2.z + c*tri.v3.z;
+}
+
+sb_color interpolate_color(sb_vec2f pt, sb_triangle2d tri) {
+    float x1 = tri.v1.x, y1 = tri.v1.y;
+    float x2 = tri.v2.x, y2 = tri.v2.y;
+    float x3 = tri.v3.x, y3 = tri.v3.y;
+    float x = pt.x, y = pt.y;
+
+    float denom = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);
+    float a = ((y2 - y3)*(x - x3) + (x3 - x2)*(y - y3)) / denom;
+    float b = ((y3 - y1)*(x - x3) + (x1 - x3)*(y - y3)) / denom;
+    float c = 1.0f - a - b;
+
+    sb_color result;
+    result.r = a*tri.c1.r + b*tri.c2.r + c*tri.c3.r;
+    result.g = a*tri.c1.g + b*tri.c2.g + c*tri.c3.g;
+    result.b = a*tri.c1.b + b*tri.c2.b + c*tri.c3.b;
+    return result;
+}
 
 sb_vec3f transform_vector(sb_vec3f ihat, sb_vec3f jhat, sb_vec3f khat, sb_vec3f v) {
   return sb_vec3add3(sb_vec3mul1(ihat, v.x), sb_vec3add3(sb_vec3mul1(jhat, v.y), sb_vec3mul1(khat, v.z)));
@@ -58,7 +85,7 @@ basis_vectors get_basis_vectors(sb_transform t) {
   return ret;
 }
 
-sb_triangle2d project_triangle(sb_triangle3d triangle, sb_transform t) {
+sb_triangle3d project_triangle(sb_triangle3d triangle, sb_transform t) {
   basis_vectors bv = get_basis_vectors(t);
   sb_triangle3d transformed = {
     transform_vector(sb_vec3mul1(bv.ihat, t.scale.x), sb_vec3mul1(bv.jhat, t.scale.x), sb_vec3mul1(bv.khat, t.scale.x), triangle.v1),
@@ -69,14 +96,7 @@ sb_triangle2d project_triangle(sb_triangle3d triangle, sb_transform t) {
     triangle.v3_color
   };
 
-  return (sb_triangle2d) {
-    sb_vec2(transformed.v1.x, transformed.v1.y),
-    sb_vec2(transformed.v2.x, transformed.v2.y),
-    sb_vec2(transformed.v3.x, transformed.v3.y),
-    triangle.v1_color,
-    triangle.v2_color,
-    triangle.v3_color
-  };
+  return transformed;
 }
 
 // NOTE: I stole this function from Sebastian Lague

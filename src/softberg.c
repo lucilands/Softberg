@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-
+#include <assert.h>
 
 
 void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform t, bool interpolate_colors) {
@@ -56,6 +56,7 @@ sb_canvas *sb_canvas_init(sb_uint width, sb_uint height) {
   sb_canvas *ret = malloc(sizeof(sb_canvas));
   if (!ret) {errno = ENOMEM; return NULL;}
 
+  assert(sizeof(sb_color) == sizeof(sb_uint8) * 4 && "struct sb_color is the wrong size");
   ret->data = malloc(width * height * sizeof(sb_color));
   if (!ret->data) {errno = ENOMEM; return NULL;}
 

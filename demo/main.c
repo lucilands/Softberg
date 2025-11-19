@@ -8,7 +8,11 @@
 #include <string.h>
 #include <errno.h>
 
+#include <time.h>
 
+
+#define AVRG_FPS_NUM 100
+#define ROTATION_SPEED 1
 
 sb_transform transform = {
   .position = {1.0f, 1.0f, 1.0f},
@@ -19,33 +23,7 @@ sb_transform transform = {
 const sb_uint WIDTH = 1080;
 const sb_uint HEIGHT = 720;
 
-void project_canvas_to_texture(sb_canvas *canvas, uint8_t *dst, int pitch) {
-    for (sb_uint y = 0; y < canvas->height; y++) {
-      uint8_t* row = dst + y * pitch;
-      for (sb_uint x = 0; x < canvas->width; x++) {
-        sb_color c = canvas->data[y * canvas->width + x];
-        // Clamp to 0-255
-        uint8_t r = c.r;
-        uint8_t g = c.g;
-        uint8_t b = c.b;
 
-        // RGBA8888 expects R,G,B,A in this order
-        row[x*4 + 0] = r;
-        row[x*4 + 1] = g;
-        row[x*4 + 2] = b;
-        //row[x*4 + 3] = 255; // full alpha
-      }
-    }
-}
-
-void render_canvas(sb_canvas *canvas, SDL_Texture *tex) {
-    void* pixels;
-    int pitch;
-    SDL_LockTexture(tex, NULL, &pixels, &pitch);
-    uint8_t* dst = pixels;
-    project_canvas_to_texture(canvas, dst, pitch);
-    SDL_UnlockTexture(tex);
-}
 
 void render_depth(sb_canvas *canvas, SDL_Texture *tex) {
   float min_d = FLT_MAX, max_d = -FLT_MAX;
@@ -90,29 +68,52 @@ int main() {
 
   int running = 1;
   SDL_Event e;
-  while (running) {
-    while (SDL_PollEvent(&e)) {
-      if (e.type == SDL_QUIT) running = 0;
+  clock_t start, end;
+  float delta_time = 0.0f, avrg_dt = 0.0f;
+  sb_uint num_frames = 0;
 
-      if (e.type == SDL_KEYDOWN) {
-        if (e.key.keysym.sym == SDLK_d) depth_screen = !depth_screen;
-        if (e.key.keysym.sym == SDLK_c) interpolate_colors = !interpolate_colors;
-        if (e.key.keysym.sym == SDLK_s) sb_write_ppm(canvas, "snapshot.ppm");
-        if (e.key.keysym.sym == SDLK_q) running = false;
+  while (running) {
+    start = clock();
+    while (SDL_PollEvent(&e)) {
+      switch(e.type) {
+        case SDL_QUIT: running = 0; break;
+
+        case SDL_KEYDOWN: {
+          switch (e.key.keysym.sym) {
+            case SDLK_d: depth_screen = !depth_screen; break;
+            case SDLK_c: interpolate_colors = !interpolate_colors; break;
+            case SDLK_s: sb_write_ppm(canvas, "snapshot.ppm"); break;
+            case SDLK_q: running = false; break;
+            default:break;
+          }
+          break;
+        }
       }
     }
-    sb_canvas_fill(canvas, (sb_color) {0, 0, 0});
+    sb_canvas_fill(canvas, (sb_color) {0, 0, 0, 255});
     sb_render_mesh(canvas, mesh, transform, interpolate_colors);
 
-    if (!depth_screen) render_canvas(canvas, tex);
+    //if (!depth_screen) render_canvas(canvas, tex);
+    //else render_depth(canvas, tex);
+    if (!depth_screen) SDL_UpdateTexture(tex, NULL, canvas->data, canvas->width * sizeof(sb_color));
     else render_depth(canvas, tex);
 
-    transform.rotation.y += 0.005;
-    transform.rotation.x += 0.005;
+    transform.rotation.y += ROTATION_SPEED*delta_time;
+    transform.rotation.x += ROTATION_SPEED*delta_time;
 
-    SDL_RenderClear(ren);
     SDL_RenderCopy(ren, tex, NULL, NULL);
     SDL_RenderPresent(ren);
+
+    end = clock();
+    delta_time = (double)(end - start) / CLOCKS_PER_SEC;
+    avrg_dt += delta_time;
+    num_frames++;
+
+    if (num_frames % AVRG_FPS_NUM == 0) {
+      printf("\r%.2ffps", 1.0f / (avrg_dt / AVRG_FPS_NUM));
+      fflush(stdout);
+      avrg_dt = 0.0f;
+    }
   }
 
   SDL_DestroyTexture(tex);

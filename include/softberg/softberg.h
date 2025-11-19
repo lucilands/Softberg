@@ -2,10 +2,10 @@
 #define _SOFTBERG_HEADER
 
 typedef unsigned int sb_uint;
-
+typedef unsigned char sb_uint8;
 
 typedef struct {
-  unsigned int r, g, b;
+  sb_uint8 r, g, b, a;
 } sb_color;
 
 #include "softmath.h"

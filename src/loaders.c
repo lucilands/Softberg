@@ -59,7 +59,7 @@ sb_mesh sb_load_obj(const char * restrict path) {
   sb_uint face_idx = 0;
 
   for (sb_uint i = 0; i < num_verts; i++) {
-    colors[i] = (sb_color) {rand() % 255, rand() % 255, rand() % 255};
+    colors[i] = (sb_color) {rand() % 255, rand() % 255, rand() % 255, rand() % 255};
   }
 
   sb_uint line = 0;

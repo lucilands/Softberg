@@ -17,7 +17,8 @@ else
 	TARGET=$(LIBDIR)/libsoftberg.so
 endif
 
-DEMO=$(BINDIR)/demo
+DEMOS=$(wildcard demo/*.c)
+DEMO=$(addprefix $(BINDIR)/,$(notdir $(DEMOS:%.c=%)))
 
 .PHONY: all
 
@@ -38,7 +39,7 @@ endif
 $(OBJECTS):$(BUILDDIR)/%.o: src/%.c $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(DEMO): demo/main.c $(BINDIR) $(TARGET)
+$(DEMO):$(BINDIR)/%: demo/%.c $(BINDIR) $(TARGET)
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(LIBDIR) $(BUILDDIR) $(BINDIR):

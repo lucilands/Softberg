@@ -13,7 +13,7 @@ int digits_only(const char *s) {
     return 1;
 }
 
-sb_vec3f parse_obj_vertex(char buf[]) {
+sb_vec3f parse_obj_vec3f(char buf[]) {
   sb_vec3f ret = {0};
 
   char *word = strtok(buf, " ");
@@ -28,6 +28,20 @@ sb_vec3f parse_obj_vertex(char buf[]) {
 
   return ret;
 }
+
+sb_vec2f parse_obj_vec2f(char buf[]) {
+  sb_vec2f ret = {0};
+
+  char *word = strtok(buf, " ");
+  word = strtok(NULL, " ");
+  ret.x = atof(word);
+
+  word = strtok(NULL, " ");
+  ret.y = atof(word);
+
+  return ret;
+}
+
 
 sb_mesh sb_load_obj(const char * restrict path) {
   FILE *f = fopen(path, "r");
@@ -48,19 +62,10 @@ sb_mesh sb_load_obj(const char * restrict path) {
   }
   num_faces += 3; // For some reason its always off by three, gotta investigate someday
 
-  sb_vec3f *vertices = malloc(num_verts * sizeof(sb_vec3f));
+  sb_vertex *vertices = malloc(num_verts * sizeof(sb_vertex));
   if (!vertices) {errno = ENOMEM; return (sb_mesh){0};}
   sb_vec3i *faces = malloc(num_faces * sizeof(sb_vec3i));
   if (!faces) {errno = ENOMEM; return (sb_mesh){0};}
-  sb_color *colors = malloc(num_verts * sizeof(sb_color));
-  if (!colors) {errno = ENOMEM; return (sb_mesh){0};}
-
-  sb_uint vert_idx = 0;
-  sb_uint face_idx = 0;
-
-  for (sb_uint i = 0; i < num_verts; i++) {
-    colors[i] = (sb_color) {rand() % 255, rand() % 255, rand() % 255, rand() % 255};
-  }
 
   sb_uint line = 0;
   fseek(f, 0L, SEEK_SET);
@@ -69,6 +74,10 @@ sb_mesh sb_load_obj(const char * restrict path) {
   sb_uint num_indices = 0;
   sb_uint start_face_idx = 0;
 
+  sb_uint vert1_idx = 0;
+  sb_uint vert2_idx = 0;
+  sb_uint vert3_idx = 0;
+  sb_uint face_idx = 0;
   while (fgets(buf, 256, f)) {
     line++;
     buf[strlen(buf)-1] = '\0'; // strip newline
@@ -77,16 +86,20 @@ sb_mesh sb_load_obj(const char * restrict path) {
       case 'v':
         switch (buf[1]) {
           case 't':
-            //printf("WARNING: %s:%i: texture coords are not implemented yet\n", path, line);
+            vertices[vert1_idx].texture_coordinate = parse_obj_vec2f(buf);
+            vert1_idx++;
             break;
           case 'n':
-            //printf("WARNING: %s:%i: vertex normals are not implemented yet\n", path, line);
+            vertices[vert2_idx].normal = parse_obj_vec3f(buf);
+            vert2_idx++;
             break;
           case 'p':
-            //printf("WARNING: %s:%i: parameter space vertices are not implemented\n", path, line);
+            printf("WARNING: %s:%i: parameter space vertices are not implemented\n", path, line);
             break;
           default:
-            vertices[vert_idx++] = parse_obj_vertex(buf);
+            vertices[vert3_idx].position = parse_obj_vec3f(buf);
+            vert3_idx++;
+            break;
         }
         break;
       case 'f':
@@ -113,11 +126,14 @@ sb_mesh sb_load_obj(const char * restrict path) {
     }
   }
 
+    for (sb_uint i = 0; i < num_verts; i++) {
+		vertices[i].color = (sb_color) {rand() % 255, rand() % 255, rand() % 255, 255};
+	}
+
   fclose(f);
   return (sb_mesh) {
     vertices,
     faces,
-    colors,
     num_faces,
   };
 }

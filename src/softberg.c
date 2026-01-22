@@ -47,7 +47,7 @@ void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform 
 void sb_render_mesh(sb_canvas *canvas, sb_mesh mesh, sb_transform t, bool interpolate_colors) {
   for (sb_uint i = 0; i < mesh.len; i++) {
     sb_vec3i idx = mesh.indices[i];
-    sb_triangle3d tri = {mesh.vertices[idx.x], mesh.vertices[idx.y], mesh.vertices[idx.z], mesh.colors[idx.x], mesh.colors[idx.y], mesh.colors[idx.z]};
+    sb_triangle3d tri = {mesh.vertices[idx.x].position, mesh.vertices[idx.y].position, mesh.vertices[idx.z].position, mesh.vertices[idx.x].color, mesh.vertices[idx.y].color, mesh.vertices[idx.z].color};
     sb_render_triangle(canvas, tri, t, interpolate_colors);
   }
 }
@@ -87,5 +87,4 @@ void sb_canvas_fill(sb_canvas *canvas, sb_color color) {
 void sb_mesh_delete(sb_mesh mesh) {
   free(mesh.vertices);
   free(mesh.indices);
-  free(mesh.colors);
 }

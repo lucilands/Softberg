@@ -11,9 +11,8 @@ typedef struct {
 #include "softmath.h"
 
 typedef struct {
-  sb_vec3f *vertices;
+  sb_vertex *vertices;
   sb_vec3i *indices;
-  sb_color *colors;
   const sb_uint len;
 } sb_mesh;
 

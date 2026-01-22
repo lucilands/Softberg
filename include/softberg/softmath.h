@@ -16,6 +16,13 @@ typedef struct {
 } sb_vec3i;
 
 typedef struct {
+  sb_vec3f position;
+  sb_color color;
+  sb_vec3f normal;
+  sb_vec2f texture_coordinate;
+} sb_vertex;
+
+typedef struct {
   sb_vec3f v1, v2, v3;
   sb_color v1_color, v2_color, v3_color;
 } sb_triangle3d;

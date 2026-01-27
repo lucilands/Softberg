@@ -30,33 +30,28 @@ bool point_in_triangle(sb_vec2f p, sb_triangle2d tri) {
 }
 
 float depth_at_point(sb_vec2f pt, sb_triangle3d tri) {
-    sb_vec3f e0 = { tri.v2.x - tri.v1.x, tri.v2.y - tri.v1.y, tri.v2.z - tri.v1.z };
-    sb_vec3f e1 = { tri.v3.x - tri.v1.x, tri.v3.y - tri.v1.y, tri.v3.z - tri.v1.z };
-    float denom = e0.x*e1.y - e1.x*e0.y;
-    float a = (pt.x*e1.y - e1.x*pt.y)/denom;
-    float b = (e0.x*pt.y - pt.x*e0.y)/denom;
-    float c = 1.0f - a - b;
-
-    return a*tri.v1.z + b*tri.v2.z + c*tri.v3.z;
-}
-
-sb_color interpolate_color(sb_vec2f pt, sb_triangle2d tri) {
-    float x1 = tri.v1.x, y1 = tri.v1.y;
-    float x2 = tri.v2.x, y2 = tri.v2.y;
-    float x3 = tri.v3.x, y3 = tri.v3.y;
+	if (tri.v1.z <= 0 || tri.v2.z <= 0 || tri.v3.z <= 0) return 0;
+    float x1 = tri.v1.x, y1 = tri.v1.y, z1 = tri.v1.z;
+    float x2 = tri.v2.x, y2 = tri.v2.y, z2 = tri.v2.z;
+    float x3 = tri.v3.x, y3 = tri.v3.y, z3 = tri.v3.z;
     float x = pt.x, y = pt.y;
 
-    float denom = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);
-    float a = ((y2 - y3)*(x - x3) + (x3 - x2)*(y - y3)) / denom;
-    float b = ((y3 - y1)*(x - x3) + (x1 - x3)*(y - y3)) / denom;
+    float denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+    if (denom == 0.0f) return z1; // degenerate triangle
+
+    float invDenom = 1.0f / denom;
+    float a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) * invDenom;
+    float b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) * invDenom;
     float c = 1.0f - a - b;
 
-    sb_color result;
-    result.r = a*tri.c1.r + b*tri.c2.r + c*tri.c3.r;
-    result.g = a*tri.c1.g + b*tri.c2.g + c*tri.c3.g;
-    result.b = a*tri.c1.b + b*tri.c2.b + c*tri.c3.b;
-    return result;
+    // clamp barycentric weights to avoid minor floating point errors
+    a = fmaxf(0.0f, fminf(1.0f, a));
+    b = fmaxf(0.0f, fminf(1.0f, b));
+    c = fmaxf(0.0f, fminf(1.0f, c));
+
+    return a / z1 + b / z2 + c / z3;
 }
+
 
 sb_vec3f transform_vector(sb_vec3f ihat, sb_vec3f jhat, sb_vec3f khat, sb_vec3f v) {
   return sb_vec3add3(sb_vec3mul1(ihat, v.x), sb_vec3add3(sb_vec3mul1(jhat, v.y), sb_vec3mul1(khat, v.z)));
@@ -88,15 +83,25 @@ basis_vectors get_basis_vectors(sb_transform t) {
   return ret;
 }
 
-sb_triangle3d project_triangle(sb_triangle3d triangle, sb_transform t) {
+sb_vec3f apply_transform(sb_vec3f v, basis_vectors bv, sb_transform t) {
+    sb_vec3f r = transform_vector(
+        sb_vec3mul1(bv.ihat, t.scale.x),
+        sb_vec3mul1(bv.jhat, t.scale.y),
+        sb_vec3mul1(bv.khat, t.scale.z),
+        v
+    );
+    return sb_vec3add3(r, t.position);
+}
+
+sb_triangle3d project_triangle(sb_triangle3d tri, sb_transform t) {
   basis_vectors bv = get_basis_vectors(t);
   sb_triangle3d transformed = {
-    transform_vector(sb_vec3mul1(bv.ihat, t.scale.x), sb_vec3mul1(bv.jhat, t.scale.x), sb_vec3mul1(bv.khat, t.scale.x), triangle.v1),
-    transform_vector(sb_vec3mul1(bv.ihat, t.scale.x), sb_vec3mul1(bv.jhat, t.scale.x), sb_vec3mul1(bv.khat, t.scale.x), triangle.v2),
-    transform_vector(sb_vec3mul1(bv.ihat, t.scale.x), sb_vec3mul1(bv.jhat, t.scale.x), sb_vec3mul1(bv.khat, t.scale.x), triangle.v3),
-    triangle.v1_color,
-    triangle.v2_color,
-    triangle.v3_color
+	apply_transform(tri.v1, bv, t),
+    apply_transform(tri.v2, bv, t),
+    apply_transform(tri.v3, bv, t),
+    tri.v1_color,
+    tri.v2_color,
+    tri.v3_color
   };
 
   return transformed;
@@ -122,12 +127,12 @@ bounding_box calculate_bb(sb_canvas *canvas, sb_triangle2d triangle) {
 }
 
 void center_triangle(sb_canvas *canvas, sb_triangle2d *triangle) {
-  triangle->v1.x += canvas->width / 2;
-  triangle->v2.x += canvas->width / 2;
-  triangle->v3.x += canvas->width / 2;
+  triangle->v1.x += canvas->width / 2.0;
+  triangle->v2.x += canvas->width / 2.0;
+  triangle->v3.x += canvas->width / 2.0;
 
-  triangle->v1.y += canvas->height / 2;
-  triangle->v2.y += canvas->height / 2;
-  triangle->v3.y += canvas->height / 2;
+  triangle->v1.y += canvas->height / 2.0;
+  triangle->v2.y += canvas->height / 2.0;
+  triangle->v3.y += canvas->height / 2.0;
 }
 

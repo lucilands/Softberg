@@ -1,7 +1,12 @@
 #ifndef _SOFTMATH_HEADER
 #define _SOFTMATH_HEADER
 
-#include "softberg.h"
+typedef unsigned int sb_uint;
+typedef unsigned char sb_uint8;
+
+typedef struct {
+  sb_uint8 r, g, b, a;
+} sb_color;
 
 typedef struct {
   float x, y;
@@ -48,5 +53,40 @@ typedef struct {
 
 #define sb_vec3add3(a, b) (sb_vec3f) {(a.x) + (b.x), (a.y) + (b.y), (a.z) + (b.z)}
 #define sb_vec3add1(a, b) (sb_vec3f) {(a.x) + (b), (a.y) + (b), (a.z) + (b)}
+
+#define lerp(a, b, x) _Generic((a), \
+			float: lerp2f, \
+			sb_vec2f: lerp2f2, \
+			sb_vec3f: lerp2f3, \
+			sb_color: lerp2c, \
+			sb_uint: lerp2u, \
+			sb_uint8: lerp2u8 \
+		)(a, b, x)
+
+#define lerp3(a, b, c, x) _Generic((a), \
+			float: lerp3f, \
+			sb_vec2f: lerp3f2, \
+			sb_vec3f: lerp3f3, \
+			sb_color: lerp3c, \
+			sb_uint: lerp3u, \
+			sb_uint8: lerp3u8 \
+		)(a, b, c, x)
+
+
+float lerp2f(float a, float b, float x);
+sb_vec2f lerp2f2(sb_vec2f a, sb_vec2f b, float x);
+sb_vec3f lerp2f3(sb_vec3f a, sb_vec3f b, float x);
+sb_color lerp2c(sb_color a, sb_color b, float x);
+sb_uint lerp2u(sb_uint a, sb_uint b, sb_uint x);
+sb_uint8 lerp2u8(sb_uint8 a, sb_uint8 b, sb_uint8 x);
+
+float lerp3f(float a, float b, float c, float x);
+sb_vec2f lerp3f2(sb_vec2f a, sb_vec2f b, sb_vec2f c, float x);
+sb_vec3f lerp3f3(sb_vec3f a, sb_vec3f b, sb_vec3f c, float x);
+sb_color lerp3c(sb_color a, sb_color b, sb_color c, float x);
+sb_uint lerp3u(sb_uint a, sb_uint b, sb_uint c, float x);
+sb_uint8 lerp3u8(sb_uint8 a, sb_uint8 b, sb_uint8 c, float x);
+
+sb_color barylerp(sb_triangle2d tri, sb_vec2f p);
 
 #endif //_SOFTMATH_HEADER

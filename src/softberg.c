@@ -33,12 +33,16 @@ void sb_render_triangle(sb_canvas *canvas, sb_triangle3d triangle, sb_transform 
   for (sb_uint x = bounding_box.topleft.x; x < bounding_box.bottomright.x; x++) {
     for (sb_uint y = bounding_box.topleft.y; y < bounding_box.bottomright.y; y++) {
       int index = x + canvas->width * y;
-      if (interpolate_colors) pix_col = interpolate_color(sb_vec2(x, y), projected_triangle2d);
 
       if (point_in_triangle(sb_vec2(x, y), projected_triangle2d)) {
-        depth = depth_at_point(sb_vec2(x, y), projected_triangle);
+		//depth = depth_at_point(sb_vec2(x, y), projected_triangle);
+		depth = projected_triangle.v1.z;
+		if (depth < canvas->depth[index]) continue;
+
+		if (interpolate_colors) pix_col = barylerp(projected_triangle2d, sb_vec2(x, y));
         canvas->data[index] = pix_col;
-        if (depth > canvas->depth[index]) canvas->depth[index] = depth;
+        //if (depth > canvas->depth[index]) canvas->depth[index] = depth;
+		canvas->depth[index] = depth;
       }
     }
   }

@@ -1,13 +1,6 @@
 #ifndef _SOFTBERG_HEADER
 #define _SOFTBERG_HEADER
 
-typedef unsigned int sb_uint;
-typedef unsigned char sb_uint8;
-
-typedef struct {
-  sb_uint8 r, g, b, a;
-} sb_color;
-
 #include "softmath.h"
 
 typedef struct {

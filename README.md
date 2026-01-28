@@ -26,6 +26,7 @@ Softberg defines a couple utilities in `softberg/utils.h`, for this example we'r
 
 ```C
 #include <softberg/softberg.h>
+#include <softberg/utils.h>
 
 
 int main() {
